@@ -263,7 +263,7 @@ std::vector<int> GeneticAlgorithm::getLowestThreeIndices() {
 
     // Take the first three indices
     std::vector<int> lowestThreeIndices(indices.begin(), indices.begin() + 3);
-    return lowestThreeIndices;;
+    return lowestThreeIndices;
 }
 
 std::pair<int,int> GeneticAlgorithm::getOverUnderStock(Model m, Input i) {
