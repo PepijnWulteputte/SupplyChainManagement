@@ -17,8 +17,8 @@ const int overStockCost = 100;
 const int underStockCost = 100;
 
 const int populationSize = 50;
-const int numberGenerations = 10000;
-const float mutationChance = 0.05;
+const int numberGenerations = 1000;
+const float mutationChance = 0.25;
 const int numPacks = 100; //Arbitrary number, should be plenty tbh
 
 class Model {
