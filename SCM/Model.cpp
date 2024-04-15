@@ -73,6 +73,43 @@ int GeneticAlgorithm::initialisePopulation(Model model) {
                     input.packAllocation[g][j] = randInt(rng);
                 //}
             }
+
+        }
+        int totalItems[numItems][numShops] = {0};
+        for (int i = 0; i < numItems; ++i) {
+            for (int j = 0; j < numShops; ++j) {
+                for (int q = 0; q < numPacks; ++q) {
+                    if (input.packContent[q][i]!=0){
+                        totalItems[i][j] += input.packContent[q][i] * input.packAllocation[q][j];
+                    }
+                }
+            }
+        }
+
+        int difference[numItems][numShops] = {0};
+        for (int i = 0; i < numItems; ++i) {
+            for (int j = 0; j < numShops; ++j) {
+                difference[i][j] = totalItems[i][j] - model.demand[i][j];
+            }
+        }
+        //Clean up Overstocking and Understocking for stores
+        for (int i = 0; i < numShops; ++i) {
+            int minimumOverstock = 10;
+            int maximumUnderstock = 0;
+            for (int j = 0; j < numItems; ++j) {
+                if (difference[j][i]<maximumUnderstock){
+                    maximumUnderstock = difference[j][i];
+                }
+                if (difference[j][i]>minimumOverstock){
+                    minimumOverstock = difference[j][i];
+                }
+            }
+            for (int j = 0; j < minimumOverstock; ++j) {
+                input.packAllocation[j][i]--;
+            }
+            for (int j = 0; j < -maximumUnderstock; ++j) {
+                input.packAllocation[j][i]++;
+            }
         }
         population.push_back(input);
     }

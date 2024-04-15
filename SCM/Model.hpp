@@ -47,6 +47,7 @@ struct GeneticAlgorithm {
     int giveWinners(Model m);
     std::vector<int> getLowestThreeIndices();
 
+
     static int calculateCost(Model m, Input i);
 
     int runGA(Model m);
