@@ -16,8 +16,8 @@ const double handlingCost = 8.53;
 const int overStockCost = 100;
 const int underStockCost = 100;
 
-const int populationSize = 100;
-const int numberGenerations = 200;
+const int populationSize = 50;
+const int numberGenerations = 10000;
 const float mutationChance = 0.05;
 const int numPacks = 100; //Arbitrary number, should be plenty tbh
 
@@ -53,6 +53,5 @@ struct GeneticAlgorithm {
     std::vector<Input> population;
     std::vector<Input> children;
     int fitnessScores[populationSize * 2]{};
-
 
 };

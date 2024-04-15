@@ -48,6 +48,7 @@ int GeneticAlgorithm::runGA(Model m) {
             fitnessScores[j+populationSize]=calculateCost(m, children[j]);
         }
         selectPopulation();
+        printf("\nGeneteration %d complete", i);
     }
 
     return 0;

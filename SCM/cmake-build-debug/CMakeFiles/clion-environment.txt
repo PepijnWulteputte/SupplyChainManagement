@@ -1,5 +1,4 @@
-ToolSet: 11.0 w64 (local)@C:\Users\pepij\AppData\Local\JetBrains\Toolbox\apps\CLion\ch-0\241.14494.288\bin\mingw
-Ninja: 1.11.1@C:\Users\pepij\AppData\Local\JetBrains\Toolbox\apps\CLion\ch-0\241.14494.288\bin\ninja\win\x64\ninja.exe
+ToolSet: w64 11.0 (local)@C:\Users\pepij\AppData\Local\JetBrains\Toolbox\apps\CLion\ch-0\232.9921.42\bin\mingw
 Options: 
 
-Options:-DCMAKE_MAKE_PROGRAM=C:/Users/pepij/AppData/Local/JetBrains/Toolbox/apps/CLion/ch-0/241.14494.288/bin/ninja/win/x64/ninja.exe
+Options:-DCMAKE_MAKE_PROGRAM=C:/Users/pepij/AppData/Local/JetBrains/Toolbox/apps/CLion/ch-0/232.9921.42/bin/ninja/win/x64/ninja.exe
