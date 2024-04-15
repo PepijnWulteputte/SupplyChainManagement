@@ -19,20 +19,59 @@ GeneticAlgorithm::GeneticAlgorithm() {
     }
 }
 
-int GeneticAlgorithm::initialisePopulation() {
+int GeneticAlgorithm::initialisePopulation(Model model) {
     std::mt19937 rng(std::random_device{}());
-    std::uniform_int_distribution<int> randInt(0, 3);
-    std::uniform_int_distribution<int> packRNG(20, 100);
+    std::uniform_int_distribution<int> randInt(0, 2);
+    std::uniform_int_distribution<int> packRNG(40, 50);
 
     for (int p = 0; p < populationSize; ++p) {
         int packAmount = packRNG(rng);
         Input input;
-        for (int i = 0; i < packAmount; ++i) {
-            for (int j = 0; j < numItems; ++j) {
-                input.packContent[i][j] = randInt(rng);
+        for (int g = 0; g < packAmount; ++g) {
+
+            bool Stop[numItems][numShops];
+            int totalItems[numItems][numShops] = {0};
+            for (int i = 0; i < numItems; ++i) {
+                for (int j = 0; j < numShops; ++j) {
+                    for (int q = 0; q < numPacks; ++q) {
+                        if (input.packContent[q][i]!=0){
+                            totalItems[i][j] += input.packContent[q][i] * input.packAllocation[q][j];
+                        }
+                    }
+                }
             }
+
+            int difference[numItems][numShops] = {0};
+            for (int i = 0; i < numItems; ++i) {
+                for (int j = 0; j < numShops; ++j) {
+                    difference[i][j] = model.demand[i][j] - totalItems[i][j];
+                    if (difference[i][j]<0){
+                        Stop[i][j] = true;
+                    }
+                }
+            }
+            for (int j = 0; j < numItems; ++j) {
+                bool enough = false;
+                for (int i = 0; i < numShops; ++i) {
+                    if (Stop[j][i]){
+                        enough = true;
+                    }
+                }
+                //if (!enough){
+                    input.packContent[g][j] = randInt(rng);
+                //}
+            }
+
             for (int j = 0; j < numShops; ++j) {
-                input.packAllocation[i][j] = randInt(rng);
+                bool enough = false;
+                for (auto & i : Stop) {
+                    if (i[j]){
+                        enough = true;
+                    }
+                }
+                //if (!enough){
+                    input.packAllocation[g][j] = randInt(rng);
+                //}
             }
         }
         population.push_back(input);
@@ -48,7 +87,7 @@ int GeneticAlgorithm::runGA(Model m) {
             fitnessScores[j+populationSize]=calculateCost(m, children[j]);
         }
         selectPopulation();
-        printf("\nGeneteration %d complete", i);
+        printf("\nGeneration %d complete", i);
     }
 
     return 0;
@@ -159,7 +198,7 @@ int GeneticAlgorithm::generateChildren() {
             }
             if (mutation(rng) < mutationChance || mutation(rng) > mutationChance/2) {
                 for (int & l : j) {
-                    l = rand() % 4;
+                    l = rand() % mutationAmount;
                 }
             }
         }
@@ -171,7 +210,7 @@ int GeneticAlgorithm::generateChildren() {
             }
             if (mutation(rng) < mutationChance || mutation(rng) > mutationChance/2) {
                 for (int & l : j) {
-                    l = rand() % 4;
+                    l = rand() % mutationAmount;
                 }
             }
         }
@@ -183,7 +222,7 @@ int GeneticAlgorithm::generateChildren() {
             }
             if (mutation(rng) < mutationChance || mutation(rng) > mutationChance/2) {
                 for (int & l : j) {
-                    l = rand() % 4;
+                    l = rand() % mutationAmount;
                 }
             }
         }
@@ -195,7 +234,7 @@ int GeneticAlgorithm::generateChildren() {
             }
             if (mutation(rng) < mutationChance || mutation(rng) > mutationChance/2) {
                 for (int & l : j) {
-                    l = rand() % 4;
+                    l = rand() % mutationAmount;
                 }
             }
         }
@@ -289,10 +328,10 @@ std::pair<int,int> GeneticAlgorithm::getOverUnderStock(Model m, Input i) {
     for (auto & j : difference) {
         for (int k : j) {
             if (k>0){
-                OverStock += k;
+                UnderStock += k;
             }
             if (k<0){
-                UnderStock += -k;
+                OverStock += -k;
             }
         }
     }
