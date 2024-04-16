@@ -92,23 +92,34 @@ int GeneticAlgorithm::initialisePopulation(Model model) {
                 difference[i][j] = totalItems[i][j] - model.demand[i][j];
             }
         }
+
         //Clean up Overstocking and Understocking for stores
         for (int i = 0; i < numShops; ++i) {
-            int minimumOverstock = 10;
-            int maximumUnderstock = 0;
-            for (int j = 0; j < numItems; ++j) {
-                if (difference[j][i]<maximumUnderstock){
-                    maximumUnderstock = difference[j][i];
-                }
-                if (difference[j][i]>minimumOverstock){
-                    minimumOverstock = difference[j][i];
+            int min = 100;
+            for (auto & j : difference) {
+                if (j[i]<min){
+                    min = j[i];
                 }
             }
-            for (int j = 0; j < minimumOverstock; ++j) {
+            for (int j = 0; j < min; ++j) {
                 input.packAllocation[j][i]--;
             }
-            for (int j = 0; j < -maximumUnderstock; ++j) {
+            for (int j = 0; j < -min; ++j) {
                 input.packAllocation[j][i]++;
+            }
+        }
+        for (int i = 0; i < numItems; ++i) {
+            int min = 100;
+            for (int j = 0; j < numShops; ++j) {
+                if (difference[i][j]<min){
+                    min = difference[i][j];
+                }
+            }
+            for (int j = 0; j < min; ++j) {
+                input.packContent[j][i]--;
+            }
+            for (int j = 0; j < -min; ++j) {
+                input.packContent[j][i]++;
             }
         }
         population.push_back(input);
@@ -119,7 +130,7 @@ int GeneticAlgorithm::initialisePopulation(Model model) {
 int GeneticAlgorithm::runGA(Model m) {
     for (int i = 0; i < numberGenerations; ++i) {
         evaluatePopulation(m);
-        generateChildren();
+        generateChildren(m);
         for (int j = 0; j < populationSize; ++j) {
             fitnessScores[j+populationSize]=calculateCost(m, children[j]);
         }
@@ -174,7 +185,7 @@ int GeneticAlgorithm::calculateCost(Model model, Input input) {
     return cost;
 }
 
-int GeneticAlgorithm::generateChildren() {
+int GeneticAlgorithm::generateChildren(Model model) {
     std::vector<std::pair<int, int>> pairs;
     int numPairs = populationSize / 2;
     std::mt19937 rng(std::random_device{}());
@@ -275,6 +286,75 @@ int GeneticAlgorithm::generateChildren() {
                 }
             }
         }
+
+        int totalItems[numItems][numShops] = {0};
+        for (int w = 0; w < numItems; ++w) {
+            for (int j = 0; j < numShops; ++j) {
+                for (int q = 0; q < numPacks; ++q) {
+                    if (son.packContent[q][w]!=0){
+                        totalItems[w][j] += son.packContent[q][w] * son.packAllocation[q][j];
+                    }
+                }
+            }
+        }
+
+        int difference[numItems][numShops] = {0};
+        for (int w = 0; w < numItems; ++w) {
+            for (int j = 0; j < numShops; ++j) {
+                difference[w][j] = totalItems[w][j] - model.demand[w][j];
+            }
+        }
+
+        //Clean up Overstocking and Understocking for stores
+        for (int w = 0; w < numShops; ++w) {
+            int min = 100;
+            for (auto & j : difference) {
+                if (j[w]<min){
+                    min = j[w];
+                }
+            }
+            for (int j = 0; j < min; ++j) {
+                son.packAllocation[j][w]--;
+            }
+            for (int j = 0; j < -min; ++j) {
+                son.packAllocation[j][w]++;
+            }
+        }
+
+        int totalItems2[numItems][numShops] = {0};
+        for (int i = 0; i < numItems; ++i) {
+            for (int j = 0; j < numShops; ++j) {
+                for (int q = 0; q < numPacks; ++q) {
+                    if (daughter.packContent[q][i]!=0){
+                        totalItems2[i][j] += daughter.packContent[q][i] * daughter.packAllocation[q][j];
+                    }
+                }
+            }
+        }
+
+        difference[numItems][numShops] = {0};
+        for (int i = 0; i < numItems; ++i) {
+            for (int j = 0; j < numShops; ++j) {
+                difference[i][j] = totalItems2[i][j] - model.demand[i][j];
+            }
+        }
+
+        //Clean up Overstocking and Understocking for stores
+        for (int i = 0; i < numShops; ++i) {
+            int min = 100;
+            for (auto & j : difference) {
+                if (j[i]<min){
+                    min = j[i];
+                }
+            }
+            for (int j = 0; j < min; ++j) {
+                daughter.packAllocation[j][i]--;
+            }
+            for (int j = 0; j < -min; ++j) {
+                daughter.packAllocation[j][i]++;
+            }
+        }
+
 
         children.push_back(son);
         children.push_back(daughter);
@@ -387,4 +467,268 @@ Input::Input(){
             j = 0;
         }
     }
-};
+}
+
+
+SimulatedAnnealing::SimulatedAnnealing() {
+}
+
+int SimulatedAnnealing::runSA(Model m) {
+    initialisePopulation(m);
+    int i = 0;
+    do {
+        generateNeighbour(m, bestSolution);
+        acceptNeighbour(m, bestSolution, neighbour);
+        printf("\nGeneration %d complete", i);
+        i++;
+    } while (temperature>0.1);
+    giveWinner(m, bestSolution);
+    return 0;
+}
+
+int SimulatedAnnealing::initialisePopulation(Model model) {
+    bestSolution = Input();
+    std::mt19937 rng(std::random_device{}());
+    std::uniform_int_distribution<int> randInt(0, 2);
+    std::uniform_int_distribution<int> packRNG(40, 50);
+
+        int packAmount = packRNG(rng);
+        Input input;
+        for (int g = 0; g < packAmount; ++g) {
+
+            bool Stop[numItems][numShops];
+            int totalItems[numItems][numShops] = {0};
+            for (int i = 0; i < numItems; ++i) {
+                for (int j = 0; j < numShops; ++j) {
+                    for (int q = 0; q < numPacks; ++q) {
+                        if (input.packContent[q][i]!=0){
+                            totalItems[i][j] += input.packContent[q][i] * input.packAllocation[q][j];
+                        }
+                    }
+                }
+            }
+
+            int difference[numItems][numShops] = {0};
+            for (int i = 0; i < numItems; ++i) {
+                for (int j = 0; j < numShops; ++j) {
+                    difference[i][j] = model.demand[i][j] - totalItems[i][j];
+                    if (difference[i][j]<0){
+                        Stop[i][j] = true;
+                    }
+                }
+            }
+            for (int j = 0; j < numItems; ++j) {
+                bool enough = false;
+                for (int i = 0; i < numShops; ++i) {
+                    if (Stop[j][i]){
+                        enough = true;
+                    }
+                }
+                //if (!enough){
+                input.packContent[g][j] = randInt(rng);
+                //}
+            }
+
+            for (int j = 0; j < numShops; ++j) {
+                bool enough = false;
+                for (auto & i : Stop) {
+                    if (i[j]){
+                        enough = true;
+                    }
+                }
+                //if (!enough){
+                input.packAllocation[g][j] = randInt(rng);
+                //}
+            }
+
+        }
+        int totalItems[numItems][numShops] = {0};
+        for (int i = 0; i < numItems; ++i) {
+            for (int j = 0; j < numShops; ++j) {
+                for (int q = 0; q < numPacks; ++q) {
+                    if (input.packContent[q][i]!=0){
+                        totalItems[i][j] += input.packContent[q][i] * input.packAllocation[q][j];
+                    }
+                }
+            }
+        }
+
+        int difference[numItems][numShops] = {0};
+        for (int i = 0; i < numItems; ++i) {
+            for (int j = 0; j < numShops; ++j) {
+                difference[i][j] = totalItems[i][j] - model.demand[i][j];
+            }
+        }
+
+        //Clean up Overstocking and Understocking for stores
+        for (int i = 0; i < numShops; ++i) {
+            int min = 100;
+            for (auto & j : difference) {
+                if (j[i]<min){
+                    min = j[i];
+                }
+            }
+            for (int j = 0; j < min; ++j) {
+                input.packAllocation[j][i]--;
+            }
+            for (int j = 0; j < -min; ++j) {
+                input.packAllocation[j][i]++;
+            }
+        }
+        for (int i = 0; i < numItems; ++i) {
+            int min = 100;
+            for (int j = 0; j < numShops; ++j) {
+                if (difference[i][j]<min){
+                    min = difference[i][j];
+                }
+            }
+            for (int j = 0; j < min; ++j) {
+                input.packContent[j][i]--;
+            }
+            for (int j = 0; j < -min; ++j) {
+                input.packContent[j][i]++;
+            }
+        }
+        bestSolution = input;
+    return 0;
+}
+
+int SimulatedAnnealing::generateNeighbour(Model m, Input i) {
+    std::mt19937 rng(std::random_device{}());
+    std::uniform_int_distribution<int> randInt(1, 3);
+    std::uniform_int_distribution<int> randShops(0, numShops);
+    std::uniform_int_distribution<int> randItems(0, numItems);
+    std::uniform_int_distribution<int> randPacks(0, 50);
+
+    neighbour = i;
+    int randGain = randInt(rng);
+    int randLoss = randInt(rng);
+    for (int j = 0; j < randGain; ++j) {
+        int randPack = randPacks(rng);
+        int randItem = randItems(rng);
+        neighbour.packContent[randPack][randItem]++;
+    }
+    for (int j = 0; j < randLoss; ++j) {
+        int randPack = randPacks(rng);
+        int randItem = randItems(rng);
+        if (neighbour.packContent[randPack][randItem]>0)
+        neighbour.packContent[randPack][randItem]--;
+    }
+    for (int j = 0; j < randGain; ++j) {
+        int randPack = randPacks(rng);
+        int randShop = randShops(rng);
+        neighbour.packAllocation[randPack][randShop]++;
+    }
+    for (int j = 0; j < randLoss; ++j) {
+        int randPack = randPacks(rng);
+        int randShop = randShops(rng);
+        if (neighbour.packAllocation[randPack][randShop]>0)
+        neighbour.packAllocation[randPack][randShop]--;
+    }
+
+    return 0;
+}
+
+int SimulatedAnnealing::calculateCost(Model model, Input input) {
+    int totalItems[numItems][numShops] = {0};
+    for (int i = 0; i < numItems; ++i) {
+        for (int j = 0; j < numShops; ++j) {
+            for (int p = 0; p < numPacks; ++p) {
+                if (input.packContent[p][i]!=0){
+                    totalItems[i][j] += input.packContent[p][i] * input.packAllocation[p][j];
+                }
+            }
+        }
+    }
+    int difference[numItems][numShops] = {0};
+    for (int i = 0; i < numItems; ++i) {
+        for (int j = 0; j < numShops; ++j) {
+            difference[i][j] = model.demand[i][j] - totalItems[i][j];
+        }
+    }
+    int cost = 0;
+    for (auto & i : difference) {
+        for (int j : i) {
+            if (j>0){
+                cost += j * overStockCost;
+            }
+            if (j<0){
+                cost += -j * underStockCost;
+            }
+        }
+    }
+    for (auto & i : input.packContent) {
+        for (int j : i) {
+            if (j > 0) {
+                cost += creationCost;
+                break;
+            }
+        }
+    }
+    for (auto & i : input.packAllocation) {
+        for (int j : i) {
+            cost += j * handlingCost;
+        }
+    }
+    return cost;
+}
+
+int SimulatedAnnealing::acceptNeighbour(Model m, Input i, Input neighbour) {
+    int cost = calculateCost(m, i);
+    int neighbourCost = calculateCost(m, neighbour);
+
+    if (neighbourCost < cost) {
+        i = neighbour;
+    }
+    else {
+        std::mt19937 rng(std::random_device{}());
+        std::uniform_real_distribution<float> dist(0, 100);
+        if (dist(rng) < temperature) {
+            i = neighbour;
+        }
+    }
+    temperature *= (1-coolingRate);
+    bestSolution = i;
+
+    return 0;
+}
+
+int SimulatedAnnealing::giveWinner(Model m, Input i) {
+    int cost = calculateCost(m, i);
+    printf("\nBest solution: %d ", cost);
+    printf("Overstock: %d ", getOverUnderStock(m, i).first);
+    printf("Understock: %d ", -getOverUnderStock(m, i).second);
+    return 0;
+}
+
+std::pair<int,int> SimulatedAnnealing::getOverUnderStock(Model m, Input i) {
+    int totalItems[numItems][numShops] = {0};
+    for (int j = 0; j < numItems; ++j) {
+        for (int k = 0; k < numShops; ++k) {
+            for (int l = 0; l < numPacks; ++l) {
+                if (i.packContent[l][j]!=0){
+                    totalItems[j][k] += i.packContent[l][j] * i.packAllocation[l][k];
+                }
+            }
+        }
+    }
+    int difference[numItems][numShops] = {0};
+    for (int j = 0; j < numItems; ++j) {
+        for (int k = 0; k < numShops; ++k) {
+            difference[j][k] = m.demand[j][k] - totalItems[j][k];
+        }
+    }
+    int OverStock = 0;
+    int UnderStock = 0;
+    for (auto & j : difference) {
+        for (int k : j) {
+            if (k>0){
+                UnderStock += k;
+            }
+            if (k<0){
+                OverStock += -k;
+            }
+        }
+    }
+    return std::make_pair(OverStock, UnderStock);
+}
