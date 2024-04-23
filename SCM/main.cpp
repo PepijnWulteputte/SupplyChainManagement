@@ -72,12 +72,17 @@ int main() {
             j = 10+rand()%20;
         }
     }
+    /*
     GeneticAlgorithm geneticAlgorithm;
     geneticAlgorithm.initialisePopulation(m);
 
     geneticAlgorithm.runGA(m);
 
     geneticAlgorithm.giveWinners(m);
+     */
+
+    SimulatedAnnealing simulatedAnnealing;
+    simulatedAnnealing.runSA(m);
 
     return 0;
 }

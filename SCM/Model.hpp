@@ -18,7 +18,7 @@ const int underStockCost = 100;
 
 const int populationSize = 100;
 const int numberGenerations = 100;
-const float mutationChance = 0.10;
+const float mutationChance = 0.05;
 const int mutationAmount = 3+1;
 const int numPacks = 100; //Arbitrary number, should be plenty tbh
 
@@ -41,11 +41,12 @@ struct GeneticAlgorithm {
 
     int initialisePopulation(Model m);
     int evaluatePopulation(Model m);
-    int generateChildren();
+    int generateChildren(Model m);
     int selectPopulation();
     std::pair<int,int> getOverUnderStock(Model m, Input i);
     int giveWinners(Model m);
     std::vector<int> getLowestThreeIndices();
+
 
     static int calculateCost(Model m, Input i);
 
@@ -54,4 +55,22 @@ struct GeneticAlgorithm {
     std::vector<Input> population;
     std::vector<Input> children;
     int fitnessScores[populationSize * 2]{};
+};
+
+struct SimulatedAnnealing {
+    SimulatedAnnealing();
+
+    int runSA(Model m);
+
+    int initialisePopulation(Model m);
+    int generateNeighbour(Model m, Input i);
+    int acceptNeighbour(Model m, Input i, Input neighbour);
+    int calculateCost(Model m, Input i);
+    int giveWinner(Model m, Input i);
+    std::pair<int,int> getOverUnderStock(Model m, Input i);
+
+    Input neighbour;
+    Input bestSolution;
+    double temperature = 100;
+    double coolingRate = 0.005;
 };
