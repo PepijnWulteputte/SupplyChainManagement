@@ -21,6 +21,8 @@ const float mutationChance = 0.05;
 const int mutationAmount = 3+1;
 const int numPacks = 100; //Arbitrary number, should be plenty tbh
 
+const int maxItems = 20; //Maximum number of items in a pack, lets say a normal person can lift a maximum of 20 items (+-10kg total)
+
 class Model {
 public:
     int demand[numItems][numShops]{};
@@ -77,8 +79,10 @@ struct SimulatedAnnealing {
 struct normalHeuristic{
     normalHeuristic();
     int runNH(Model m);
-    int calculateCost(Model m, Input i);
+    int calculateCost(Input i);
+    int calculateDifference(Model m, Input i);
     int giveWinner(Model m, Input i);
     std::pair<int,int> getOverUnderStock(Model m, Input i);
+    int difference[numItems][numShops]{}; //Difference between demand and supply
     Input bestSolution;
 };

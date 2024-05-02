@@ -743,35 +743,38 @@ normalHeuristic::normalHeuristic() {
 
 int normalHeuristic::runNH(Model m) {
     int bestCost = 1000000;
-    for (int i = 0; i < 100; ++i) {
-        Input input;
+    int packCounter = 0;
 
-        int cost = calculateCost(m, input);
-        if (cost < bestCost) {
-            bestSolution = input;
-            bestCost = cost;
+    Input input;
+    calculateDifference(m, input);
+
+    //Pepieno algorithm
+    for (int i = 0; i < numItems; ++i) {
+        for (int j = 0; j < numShops; ++j) {
+            if (difference[i][j] > 0) {
+                if (difference[i][j] < maxItems){
+                    input.packContent[packCounter][i] = difference[i][j];
+                } else {
+                    input.packContent[packCounter][i] = maxItems;
+                }
+            }
+            input.packAllocation[packCounter][j]++;
+            packCounter++;
         }
+    }
+
+
+
+    int cost = calculateCost(input);
+    if (cost < bestCost) {
+        bestSolution = input;
+        bestCost = cost;
     }
     return 0;
 }
 
-int normalHeuristic::calculateCost(Model m, Input i) {
-    int totalItems[numItems][numShops] = {0};
-    for (int j = 0; j < numItems; ++j) {
-        for (int k = 0; k < numShops; ++k) {
-            for (int p = 0; p < numPacks; ++p) {
-                if (i.packContent[p][j] != 0) {
-                    totalItems[j][k] += i.packContent[p][j] * i.packAllocation[p][k];
-                }
-            }
-        }
-    }
-    int difference[numItems][numShops] = {0};
-    for (int j = 0; j < numItems; ++j) {
-        for (int k = 0; k < numShops; ++k) {
-            difference[j][k] = m.demand[j][k] - totalItems[j][k];
-        }
-    }
+int normalHeuristic::calculateCost(Input i) {
+
     float cost = 0;
     for (int l = 0; l < numItems; ++l) {
         for (int j = 0; j < numShops; ++j) {
@@ -838,5 +841,25 @@ std::pair<int, int> normalHeuristic::getOverUnderStock(Model m, Input i) {
         }
     }
     return std::make_pair(OverStock, UnderStock);
+}
+
+int normalHeuristic::calculateDifference(Model m, Input i) {
+    int totalItems[numItems][numShops] = {0};
+    for (int j = 0; j < numItems; ++j) {
+        for (int k = 0; k < numShops; ++k) {
+            for (int l = 0; l < numPacks; ++l) {
+                if (i.packContent[l][j] != 0) {
+                    totalItems[j][k] += i.packContent[l][j] * i.packAllocation[l][k];
+                }
+            }
+        }
+    }
+
+    for (int j = 0; j < numItems; ++j) {
+        for (int k = 0; k < numShops; ++k) {
+            this->difference[j][k] = m.demand[j][k] - totalItems[j][k];
+        }
+    }
+    return 0;
 }
 

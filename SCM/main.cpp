@@ -76,6 +76,10 @@ int main() {
     SimulatedAnnealing simulatedAnnealing;
     simulatedAnnealing.runSA(m);
 */
+    normalHeuristic nh;
+    nh.runNH(m);
+    nh.giveWinner(m, nh.bestSolution);
+
 
     return 0;
 }
