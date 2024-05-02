@@ -64,7 +64,7 @@ int main() {
             m.demand[i][j] = demand[i][j];
         }
     }
-
+/*
     GeneticAlgorithm geneticAlgorithm;
     geneticAlgorithm.initialisePopulation(m);
 
@@ -75,6 +75,7 @@ int main() {
 
     SimulatedAnnealing simulatedAnnealing;
     simulatedAnnealing.runSA(m);
+*/
 
     return 0;
 }

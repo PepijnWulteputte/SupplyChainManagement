@@ -13,9 +13,8 @@ const int numShops = 11;
 const int numItems = 49;
 const int creationCost = 127;
 const double handlingCost = 8.53;
-const int overStockCost = 100;
-const int underStockCost = 100;
-
+const float overStockCost[numItems] = {73,73,73,73,73,73,73,73,73,73,73,73,28,28,28,28,28,28,97,97,97,97,97,97,73,73,73,73,73,73,83,83,83,83,83,83,28.5,28.5,28.5,28.5,28.5,28.5,97,97,97,97,97,97,2};
+const float underStockCost[numItems] = {47,47,47,47,47,47,47,47,47,47,47,47,12,12,12,12,12,12,53,53,53,53,53,53,47,47,47,47,47,47,67,67,67,67,67,67,11.5,11.5,11.5,11.5,11.5,11.5,53,53,53,53,53,53,5.99};
 const int populationSize = 100;
 const int numberGenerations = 100;
 const float mutationChance = 0.05;
@@ -73,4 +72,13 @@ struct SimulatedAnnealing {
     Input bestSolution;
     double temperature = 100;
     double coolingRate = 0.005;
+};
+
+struct normalHeuristic{
+    normalHeuristic();
+    int runNH(Model m);
+    int calculateCost(Model m, Input i);
+    int giveWinner(Model m, Input i);
+    std::pair<int,int> getOverUnderStock(Model m, Input i);
+    Input bestSolution;
 };
