@@ -737,13 +737,23 @@ std::pair<int, int> SimulatedAnnealing::getOverUnderStock(Model m, Input i) {
 }
 
 
-normalHeuristic::normalHeuristic() {
-
+PepienoHeuristic::PepienoHeuristic() {
+    for (auto &i: difference) {
+        for (int &j: i) {
+            j = 0;
+        }
+    }
+    bestSolution = Input();
 }
 
-int normalHeuristic::runNH(Model m) {
+int PepienoHeuristic::runNH(Model m) {
     int bestCost = 1000000;
     int packCounter = 0;
+    int freeSpacePacks[numPacks];
+    for (int &i: freeSpacePacks) {
+        i = maxItems;
+    }
+
 
     Input input;
     calculateDifference(m, input);
@@ -752,28 +762,29 @@ int normalHeuristic::runNH(Model m) {
     for (int i = 0; i < numItems; ++i) {
         for (int j = 0; j < numShops; ++j) {
             if (difference[i][j] > 0) {
-                if (difference[i][j] < maxItems){
+                if (difference[i][j] < freeSpacePacks[packCounter]) {
                     input.packContent[packCounter][i] = difference[i][j];
+                    freeSpacePacks[packCounter] -= difference[i][j];
                 } else {
-                    input.packContent[packCounter][i] = maxItems;
+                    input.packContent[packCounter][i] = freeSpacePacks[packCounter];
+                    freeSpacePacks[packCounter]=0;
                 }
             }
             input.packAllocation[packCounter][j]++;
+            for (int k = j; k < numShops; ++k) {
+                if (difference[i][k] > input.packContent[packCounter][i]) {
+                    input.packAllocation[packCounter][k]++;
+                }
+            }
             packCounter++;
+            calculateDifference(m, input);
         }
     }
-
-
-
-    int cost = calculateCost(input);
-    if (cost < bestCost) {
-        bestSolution = input;
-        bestCost = cost;
-    }
+    bestSolution = input;
     return 0;
 }
 
-int normalHeuristic::calculateCost(Input i) {
+float PepienoHeuristic::calculateCost(Input i) {
 
     float cost = 0;
     for (int l = 0; l < numItems; ++l) {
@@ -803,31 +814,15 @@ int normalHeuristic::calculateCost(Input i) {
     return cost;
 }
 
-int normalHeuristic::giveWinner(Model m, Input i) {
-    int cost = calculateCost(m, i);
-    printf("\nBest solution: %d ", cost);
+int PepienoHeuristic::giveWinner(Model m, Input i) {
+    float cost = calculateCost(i);
+    printf("\nBest solution: %f ", cost);
     printf("Overstock: %d ", getOverUnderStock(m, i).first);
     printf("Understock: %d ", -getOverUnderStock(m, i).second);
     return 0;
 }
 
-std::pair<int, int> normalHeuristic::getOverUnderStock(Model m, Input i) {
-    int totalItems[numItems][numShops] = {0};
-    for (int j = 0; j < numItems; ++j) {
-        for (int k = 0; k < numShops; ++k) {
-            for (int l = 0; l < numPacks; ++l) {
-                if (i.packContent[l][j] != 0) {
-                    totalItems[j][k] += i.packContent[l][j] * i.packAllocation[l][k];
-                }
-            }
-        }
-    }
-    int difference[numItems][numShops] = {0};
-    for (int j = 0; j < numItems; ++j) {
-        for (int k = 0; k < numShops; ++k) {
-            difference[j][k] = m.demand[j][k] - totalItems[j][k];
-        }
-    }
+std::pair<int, int> PepienoHeuristic::getOverUnderStock(Model m, Input i) {
     int OverStock = 0;
     int UnderStock = 0;
     for (auto &j: difference) {
@@ -843,7 +838,7 @@ std::pair<int, int> normalHeuristic::getOverUnderStock(Model m, Input i) {
     return std::make_pair(OverStock, UnderStock);
 }
 
-int normalHeuristic::calculateDifference(Model m, Input i) {
+int PepienoHeuristic::calculateDifference(Model m, Input i) {
     int totalItems[numItems][numShops] = {0};
     for (int j = 0; j < numItems; ++j) {
         for (int k = 0; k < numShops; ++k) {
