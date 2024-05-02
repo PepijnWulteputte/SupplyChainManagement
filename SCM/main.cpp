@@ -76,9 +76,9 @@ int main() {
     SimulatedAnnealing simulatedAnnealing;
     simulatedAnnealing.runSA(m);
 */
-    normalHeuristic nh;
-    nh.runNH(m);
-    nh.giveWinner(m, nh.bestSolution);
+    PepienoHeuristic pepienoHeuristic;
+    pepienoHeuristic.runNH(m);
+    pepienoHeuristic.giveWinner( pepienoHeuristic.bestSolution);
 
 
     return 0;

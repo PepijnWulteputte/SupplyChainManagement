@@ -472,8 +472,7 @@ Input::Input() {
 }
 
 
-SimulatedAnnealing::SimulatedAnnealing() {
-}
+SimulatedAnnealing::SimulatedAnnealing() = default;
 
 int SimulatedAnnealing::runSA(Model m) {
     initialisePopulation(m);
@@ -747,37 +746,36 @@ PepienoHeuristic::PepienoHeuristic() {
 }
 
 int PepienoHeuristic::runNH(Model m) {
-    int bestCost = 1000000;
-    int packCounter = 0;
-    int freeSpacePacks[numPacks];
-    for (int &i: freeSpacePacks) {
-        i = maxItems;
+    int packCounter = 0;    //Counter for the packs
+    int freeSpacePacks[numPacks];   //Array to store the free space in each pack
+    for (int &i: freeSpacePacks) { //Initialize the array
+        i = maxItems;  //Max items is the maximum amount of items that can be stored in a pack
     }
 
 
     Input input;
-    calculateDifference(m, input);
+    calculateDifference(m, input); //Calculate the difference between demand and supply
 
     //Pepieno algorithm
     for (int i = 0; i < numItems; ++i) {
         for (int j = 0; j < numShops; ++j) {
-            if (difference[i][j] > 0) {
-                if (difference[i][j] < freeSpacePacks[packCounter]) {
-                    input.packContent[packCounter][i] = difference[i][j];
-                    freeSpacePacks[packCounter] -= difference[i][j];
-                } else {
-                    input.packContent[packCounter][i] = freeSpacePacks[packCounter];
-                    freeSpacePacks[packCounter]=0;
+            if (difference[i][j] > 0) {  //If there is Understock
+                if (difference[i][j] < freeSpacePacks[packCounter]) {   //If the difference is smaller than the free space in the pack
+                    input.packContent[packCounter][i] = difference[i][j];   //Fill the pack with the difference
+                    freeSpacePacks[packCounter] -= difference[i][j];    //Subtract the difference from the free space
+                } else {    //If the difference is larger than the free space in the pack
+                    input.packContent[packCounter][i] = freeSpacePacks[packCounter];    //Fill the pack
+                    freeSpacePacks[packCounter]=0;  //Set the free space to 0
                 }
             }
-            input.packAllocation[packCounter][j]++;
-            for (int k = j; k < numShops; ++k) {
-                if (difference[i][k] > input.packContent[packCounter][i]) {
-                    input.packAllocation[packCounter][k]++;
+            input.packAllocation[packCounter][j]++;   //Allocate the pack to the shop
+            for (int k = j; k < numShops; ++k) {    //Check if the pack can be allocated to other shops
+                if (difference[i][k] > input.packContent[packCounter][i]) {     //If the difference is larger than the content of the pack
+                    input.packAllocation[packCounter][k]++;     //Allocate the pack to the shop
                 }
             }
-            packCounter++;
-            calculateDifference(m, input);
+            packCounter++;  //Increment the pack counter
+            calculateDifference(m, input);  //Recalculate the difference
         }
     }
     bestSolution = input;
@@ -793,7 +791,7 @@ float PepienoHeuristic::calculateCost(Input i) {
                 cost += difference[l][j] * overStockCost[l];
             }
             if (difference[l][j] < 0) {
-                cost += -difference[l][j] * underStockCost[l];
+                cost += -difference[l][j] * underStockCost[l];  //Negative difference means understock so we multiply by -1
             }
         }
     }
@@ -801,28 +799,28 @@ float PepienoHeuristic::calculateCost(Input i) {
     for (auto &j: i.packContent) {
         for (int k: j) {
             if (k > 0) {
-                cost += creationCost;
+                cost += creationCost;   //Creation cost is added for every pack that has items in it
                 break;
             }
         }
     }
     for (auto &j: i.packAllocation) {
         for (int k: j) {
-            cost += k * handlingCost;
+            cost += k * handlingCost;   //Handling cost is added for every pack that is allocated to a shop
         }
     }
     return cost;
 }
 
-int PepienoHeuristic::giveWinner(Model m, Input i) {
+int PepienoHeuristic::giveWinner(Input i) {
     float cost = calculateCost(i);
     printf("\nBest solution: %f ", cost);
-    printf("Overstock: %d ", getOverUnderStock(m, i).first);
-    printf("Understock: %d ", -getOverUnderStock(m, i).second);
+    printf("Overstock: %d ", getOverUnderStock(i).first);
+    printf("Understock: %d ", -getOverUnderStock(i).second);
     return 0;
 }
 
-std::pair<int, int> PepienoHeuristic::getOverUnderStock(Model m, Input i) {
+std::pair<int, int> PepienoHeuristic::getOverUnderStock(Input i) {
     int OverStock = 0;
     int UnderStock = 0;
     for (auto &j: difference) {
