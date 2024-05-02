@@ -746,7 +746,7 @@ PepienoHeuristic::PepienoHeuristic() {
 }
 
 int PepienoHeuristic::runNH(Model m) {
-    int packCounter = 0;    //Counter for the packs
+    int packCounter = -1;    //Counter for the packs
     int freeSpacePacks[numPacks];   //Array to store the free space in each pack
     for (int &i: freeSpacePacks) { //Initialize the array
         i = maxItems;  //Max items is the maximum amount of items that can be stored in a pack
@@ -757,27 +757,65 @@ int PepienoHeuristic::runNH(Model m) {
     calculateDifference(m, input); //Calculate the difference between demand and supply
 
     //Pepieno algorithm
+    //Initialize the packs
     for (int i = 0; i < numItems; ++i) {
         for (int j = 0; j < numShops; ++j) {
-            if (difference[i][j] > 0) {  //If there is Understock
-                if (difference[i][j] < freeSpacePacks[packCounter]) {   //If the difference is smaller than the free space in the pack
+            do {
+                if (difference[i][j] <
+                    freeSpacePacks[packCounter]) {   //If the difference is smaller than the free space in the pack
                     input.packContent[packCounter][i] = difference[i][j];   //Fill the pack with the difference
                     freeSpacePacks[packCounter] -= difference[i][j];    //Subtract the difference from the free space
                 } else {    //If the difference is larger than the free space in the pack
                     input.packContent[packCounter][i] = freeSpacePacks[packCounter];    //Fill the pack
-                    freeSpacePacks[packCounter]=0;  //Set the free space to 0
+                    freeSpacePacks[packCounter] = 0;  //Set the free space to 0
                 }
-            }
-            input.packAllocation[packCounter][j]++;   //Allocate the pack to the shop
-            for (int k = j; k < numShops; ++k) {    //Check if the pack can be allocated to other shops
-                if (difference[i][k] > input.packContent[packCounter][i]) {     //If the difference is larger than the content of the pack
-                    input.packAllocation[packCounter][k]++;     //Allocate the pack to the shop
+                input.packAllocation[packCounter][j]++;   //Allocate the pack to the shop
+                for (int k = 0; k < j; ++k) {    //Check if the pack can be allocated to other shops
+                    if (difference[i][k] >
+                        input.packContent[packCounter][i]) {     //If the difference is larger than the content of the pack
+                        input.packAllocation[packCounter][k]++;     //Allocate the pack to the shop
+                    }
                 }
-            }
-            packCounter++;  //Increment the pack counter
-            calculateDifference(m, input);  //Recalculate the difference
+                for (int k = j + 1; k < numShops; ++k) {    //Check if the pack can be allocated to other shops
+                    if (difference[i][k] >
+                        input.packContent[packCounter][i]) {     //If the difference is larger than the content of the pack
+                        input.packAllocation[packCounter][k]++;     //Allocate the pack to the shop
+                    }
+                }
+                packCounter++;  //Increment the pack counter
+                calculateDifference(m, input);  //Recalculate the difference
+            } while (difference[i][j] > 0);
         }
     }
+    //Optimize the solution
+    for (int i = 0; i < numPacks; i++) {
+        for (int j = i + 1; j < numPacks; ++j) {
+            for (int k = 0; k < numItems; ++k) {
+                if (input.packContent[i][k] != input.packContent[j][k]) {//If the content of the packs is not the same
+                    goto notSame;
+                }
+            }
+
+            //If the contents of the packs are the same
+            for (int l = 0; l < numShops; ++l) {
+                input.packAllocation[i][l] += input.packAllocation[j][l];   //Add the allocation of the pack to the other pack
+                input.packAllocation[j][l] = 0;   //Set the allocation of the other pack to 0
+            }
+            for (int n = 0; n < numItems; ++n) {
+                input.packContent[j][n] = 0;    //Clear the content of the other pack
+            }
+            for (int n = j; n < numPacks - 1; ++n) {
+                for (int l = 0; l < numShops; ++l) {
+                    input.packAllocation[n][l] = input.packAllocation[n + 1][l];  //Move the allocation a layer up
+                }
+                for (int k = 0; k < numItems; ++k) {
+                    input.packContent[n][k] = input.packContent[n + 1][k];  //Move the content a layer up
+                }
+            }
+            notSame:;
+        }
+    }
+    calculateDifference(m, input);  //Recalculate the difference
     bestSolution = input;
     return 0;
 }
@@ -791,7 +829,8 @@ float PepienoHeuristic::calculateCost(Input i) {
                 cost += difference[l][j] * overStockCost[l];
             }
             if (difference[l][j] < 0) {
-                cost += -difference[l][j] * underStockCost[l];  //Negative difference means understock so we multiply by -1
+                cost += -difference[l][j] *
+                        underStockCost[l];  //Negative difference means understock so we multiply by -1
             }
         }
     }
