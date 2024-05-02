@@ -15,7 +15,7 @@ const int creationCost = 127;
 const float handlingCost = 8.53;
 const float overStockCost[numItems] = {73,73,73,73,73,73,73,73,73,73,73,73,28,28,28,28,28,28,97,97,97,97,97,97,73,73,73,73,73,73,83,83,83,83,83,83,28.5,28.5,28.5,28.5,28.5,28.5,97,97,97,97,97,97,2};
 const float underStockCost[numItems] = {47,47,47,47,47,47,47,47,47,47,47,47,12,12,12,12,12,12,53,53,53,53,53,53,47,47,47,47,47,47,67,67,67,67,67,67,11.5,11.5,11.5,11.5,11.5,11.5,53,53,53,53,53,53,5.99};
-const int numPacks = 200; //Arbitrary number, should be plenty tbh
+const int numPacks = 800; //Arbitrary number, should be plenty tbh
 const int maxItems = 20; //Maximum number of items in a pack, lets say a normal person can lift a maximum of 20 items (+-10kg total)
 
 const int populationSize = 100;

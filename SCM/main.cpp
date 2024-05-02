@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 
 #include "Model.hpp"
 
@@ -80,6 +81,22 @@ int main() {
     pepienoHeuristic.runNH(m);
     pepienoHeuristic.giveWinner( pepienoHeuristic.bestSolution);
 
-
+    std::ofstream outputFile("C:/Users/pepij/OneDrive/Master 2/Semester 2/Supply Chain Management/Group Assignment/Results/PepienoHeuristic.csv");
+    outputFile << "Pepieno Heuristic" << ";";
+    outputFile << "\n";
+    for (int i = 0; i < numPacks; ++i) {
+        for (int j = 0; j < numItems; ++j) {
+            outputFile << pepienoHeuristic.bestSolution.packContent[i][j] << ";";
+        }
+        outputFile << "\n";
+    }
+    outputFile << "\n";
+    for (int i = 0; i < numPacks; ++i) {
+        for (int j = 0; j < numShops; ++j) {
+            outputFile << pepienoHeuristic.bestSolution.packAllocation[i][j] << ";";
+        }
+        outputFile << "\n";
+    }
+    outputFile.close();
     return 0;
 }
