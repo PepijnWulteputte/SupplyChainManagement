@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <cmath>
 
 #include "Model.hpp"
 
@@ -62,7 +63,14 @@ int main() {
 
     for (int i = 0; i < numItems; ++i) {
         for (int j = 0; j < numShops; ++j) {
-            m.demand[i][j] = demand[i][j];
+            //Round demand to the closest power of 2
+            //m.demand[i][j] = pow(2, ceil(log2(demand[i][j])));
+
+            //Round up demand to the closest multiple of 2
+            m.demand[i][j] = demand[i][j] + demand[i][j]%2;
+
+            // Normal demand
+            //m.demand[i][j] = demand[i][j];
         }
     }
 /*
@@ -82,16 +90,16 @@ int main() {
     pepienoHeuristic.giveWinner( pepienoHeuristic.bestSolution);
 
     std::ofstream outputFile("C:/Users/pepij/OneDrive/Master 2/Semester 2/Supply Chain Management/Group Assignment/Results/PepienoHeuristic.csv");
-    for (int i = 0; i < numPacks; ++i) {
-        for (int j = 0; j < numItems; ++j) {
-            outputFile << pepienoHeuristic.bestSolution.packContent[i][j] << ";";
+    for (auto & i : pepienoHeuristic.bestSolution.packContent) {
+        for (int j : i) {
+            outputFile << j << ";";
         }
         outputFile << "\n";
     }
     outputFile << "\n";
-    for (int i = 0; i < numPacks; ++i) {
-        for (int j = 0; j < numShops; ++j) {
-            outputFile << pepienoHeuristic.bestSolution.packAllocation[i][j] << ";";
+    for (auto & i : pepienoHeuristic.bestSolution.packAllocation) {
+        for (int j : i) {
+            outputFile << j << ";";
         }
         outputFile << "\n";
     }

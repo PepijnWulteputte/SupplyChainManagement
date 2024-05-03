@@ -819,7 +819,6 @@ int PepienoHeuristic::runNH(Model m) {
                         input.packContent[n][k] = input.packContent[n + 1][k];  //Move the content a layer up
                     }
                 }
-                printf("\nPack %d and Pack %d are the same", i, j);
                 j--;    //Decrement j to check the pack that was moved up
             }
             notSame:;
@@ -862,7 +861,6 @@ int PepienoHeuristic::runNH(Model m) {
                         input.packAllocation[n][k] = input.packAllocation[n + 1][k];  //Move the allocation a layer up
                     }
                 }
-                printf("\nPack %d and Pack %d are the same", i, j);
                 j--;    //Decrement j to check the pack that was moved up
             }
             notSame2:;
