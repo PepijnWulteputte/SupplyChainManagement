@@ -790,7 +790,7 @@ int PepienoHeuristic::runNH(Model m) {
     for (int i = 0; i <numItems; ++i) {
         input.packContent[numPacks-1][i]=0;
     }
-    //Optimize the solution
+    //Optimize the solution with same pack content
     for (int i = 0; i < numPacks; i++) {
         bool used = false;
         for (int j = i + 1; j < numPacks; ++j) {
@@ -823,6 +823,49 @@ int PepienoHeuristic::runNH(Model m) {
                 j--;    //Decrement j to check the pack that was moved up
             }
             notSame:;
+        }
+    }
+
+    //Optimize the solution with same pack allocation
+    for (int i = 0; i < numPacks; i++) {
+        bool used = false;
+        for (int j = i + 1; j < numPacks; ++j) {
+            int content1 = 0;
+            int content2 = 0;
+
+            for (int k = 0; k < numShops; ++k) {
+                if (input.packAllocation[i][k] != input.packAllocation[j][k]) {//If the allocation of the packs is not the same
+                    goto notSame2;
+                }
+                if (input.packAllocation[i][k]!=0){
+                    used = true;
+                }
+            }
+            for (int k = 0; k < numItems; ++k) {
+                content1 += input.packContent[i][k];
+                content2 += input.packContent[j][k];
+            }
+            //If the allocations of the packs are the same and there is enough space left in pack 1
+            if (used && content1+content2<=maxItems) {
+                for (int l = 0; l < numItems; ++l) {
+                    input.packContent[i][l] += input.packContent[j][l];   //Add the content of the pack to the other pack
+                    input.packContent[j][l] = 0;   //Set the content of the other pack to 0
+                }
+                for (int n = 0; n < numShops; ++n) {
+                    input.packAllocation[j][n] = 0;    //Clear the allocation of the other pack
+                }
+                for (int n = j; n < numPacks - 1; ++n) {
+                    for (int l = 0; l < numItems; ++l) {
+                        input.packContent[n][l] = input.packContent[n + 1][l];  //Move the content a layer up
+                    }
+                    for (int k = 0; k < numShops; ++k) {
+                        input.packAllocation[n][k] = input.packAllocation[n + 1][k];  //Move the allocation a layer up
+                    }
+                }
+                printf("\nPack %d and Pack %d are the same", i, j);
+                j--;    //Decrement j to check the pack that was moved up
+            }
+            notSame2:;
         }
     }
     calculateDifference(m, input);  //Recalculate the difference
