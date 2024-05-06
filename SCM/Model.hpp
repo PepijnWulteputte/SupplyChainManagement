@@ -15,7 +15,7 @@ const int creationCost = 127;
 const float handlingCost = 8.53;
 const float overStockCost[numItems] = {73,73,73,73,73,73,73,73,73,73,73,73,28,28,28,28,28,28,97,97,97,97,97,97,73,73,73,73,73,73,83,83,83,83,83,83,28.5,28.5,28.5,28.5,28.5,28.5,97,97,97,97,97,97,2};
 const float underStockCost[numItems] = {47,47,47,47,47,47,47,47,47,47,47,47,12,12,12,12,12,12,53,53,53,53,53,53,47,47,47,47,47,47,67,67,67,67,67,67,11.5,11.5,11.5,11.5,11.5,11.5,53,53,53,53,53,53,5.99};
-const int numPacks = 1000; //Arbitrary number, should be plenty tbh
+const int numPacks = 600; //Arbitrary number, should be plenty tbh
 const int maxItems = 32; //Maximum number of items in a pack, lets say a normal person can lift a maximum of 20 items (+-10kg total)
 
 const int populationSize = 100;
@@ -80,10 +80,19 @@ struct PepienoHeuristic{    //This is the best heuristic, I promise
     PepienoHeuristic();
     int runNH(Model m);
     float calculateCost(Input i);
+
+    Input optimiseSamePack(Input i);
+    Input optimiseSameAllocation(Input i);
+    Input optimiseMultipleof2(Input i);
+    Input optimiseMultipleof3(Input i);
+    Input optimiseMultipleof4(Input i);
+    Input optimiseSumOfPacks(Input i);
+
     int calculateDifference(Model m, Input i);
     int giveWinner(Input i);
     std::pair<int,int> getOverUnderStock(Input i);
 
     int difference[numItems][numShops]{}; //Difference between demand and supply
     Input bestSolution;
+    float bestCost;
 };

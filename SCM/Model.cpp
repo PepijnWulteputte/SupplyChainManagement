@@ -743,131 +743,121 @@ PepienoHeuristic::PepienoHeuristic() {
         }
     }
     bestSolution = Input();
+    bestCost = 1000000;
 }
 
 int PepienoHeuristic::runNH(Model m) {
-    int packCounter = -1;    //Counter for the packs
-    int freeSpacePacks[numPacks];   //Array to store the free space in each pack
-    for (int &i: freeSpacePacks) { //Initialize the array
-        i = maxItems;  //Max items is the maximum amount of items that can be stored in a pack
-    }
-
-
     Input input;
-    calculateDifference(m, input); //Calculate the difference between demand and supply
+    int bestOrder[6] = {0};
+    std::vector<int> optimiseMethods = {1, 2, 3, 4, 5, 6};
 
-    //Pepieno algorithm
-    //Initialize the packs
-    for (int i = 0; i < numItems; ++i) {
-        for (int j = 0; j < numShops; ++j) {
-            do {
-                if (difference[i][j] <
-                    freeSpacePacks[packCounter]) {   //If the difference is smaller than the free space in the pack
-                    input.packContent[packCounter][i] = difference[i][j];   //Fill the pack with the difference
-                    freeSpacePacks[packCounter] -= difference[i][j];    //Subtract the difference from the free space
-                } else {    //If the difference is larger than the free space in the pack
-                    input.packContent[packCounter][i] = freeSpacePacks[packCounter];    //Fill the pack
-                    freeSpacePacks[packCounter] = 0;  //Set the free space to 0
-                }
-                input.packAllocation[packCounter][j]++;   //Allocate the pack to the shop
-                for (int k = 0; k < j; ++k) {    //Check if the pack can be allocated to other shops
-                    if (difference[i][k] >
-                        input.packContent[packCounter][i]) {     //If the difference is larger than the content of the pack
-                        input.packAllocation[packCounter][k]++;     //Allocate the pack to the shop
-                    }
-                }
-                for (int k = j + 1; k < numShops; ++k) {    //Check if the pack can be allocated to other shops
-                    if (difference[i][k] >
-                        input.packContent[packCounter][i]) {     //If the difference is larger than the content of the pack
-                        input.packAllocation[packCounter][k]++;     //Allocate the pack to the shop
-                    }
-                }
-                packCounter++;  //Increment the pack counter
-                calculateDifference(m, input);  //Recalculate the difference
-            } while (difference[i][j] > 0);
+    for (int i = 0; i < 719; ++i) {
+        int packCounter = -1;    //Counter for the packs
+        int freeSpacePacks[numPacks];   //Array to store the free space in each pack
+        for (int &j: freeSpacePacks) { //Initialize the array
+            j = maxItems;  //Max items is the maximum amount of items that can be stored in a pack
         }
-    }
-    for (int i = 0; i <numItems; ++i) {
-        input.packContent[numPacks-1][i]=0;
-    }
-    //Optimize the solution with same pack content
-    for (int i = 0; i < numPacks; i++) {
-        bool used = false;
-        for (int j = i + 1; j < numPacks; ++j) {
-            for (int k = 0; k < numItems; ++k) {
-                if (input.packContent[i][k] != input.packContent[j][k]) {//If the content of the packs is not the same
-                    goto notSame;
-                }
-                if (input.packContent[i][k]!=0){
-                    used = true;
-                }
-            }
-            //If the contents of the packs are the same
-            if (used) {
-                for (int l = 0; l < numShops; ++l) {
-                    input.packAllocation[i][l] += input.packAllocation[j][l];   //Add the allocation of the pack to the other pack
-                    input.packAllocation[j][l] = 0;   //Set the allocation of the other pack to 0
-                }
-                for (int n = 0; n < numItems; ++n) {
-                    input.packContent[j][n] = 0;    //Clear the content of the other pack
-                }
-                for (int n = j; n < numPacks - 1; ++n) {
-                    for (int l = 0; l < numShops; ++l) {
-                        input.packAllocation[n][l] = input.packAllocation[n + 1][l];  //Move the allocation a layer up
-                    }
-                    for (int k = 0; k < numItems; ++k) {
-                        input.packContent[n][k] = input.packContent[n + 1][k];  //Move the content a layer up
-                    }
-                }
-                j--;    //Decrement j to check the pack that was moved up
-            }
-            notSame:;
-        }
-    }
 
-    //Optimize the solution with same pack allocation
-    for (int i = 0; i < numPacks; i++) {
-        bool used = false;
-        for (int j = i + 1; j < numPacks; ++j) {
-            int content1 = 0;
-            int content2 = 0;
-
-            for (int k = 0; k < numShops; ++k) {
-                if (input.packAllocation[i][k] != input.packAllocation[j][k]) {//If the allocation of the packs is not the same
-                    goto notSame2;
-                }
-                if (input.packAllocation[i][k]!=0){
-                    used = true;
-                }
+        //reset the input
+        for (auto &l: input.packContent) {
+            for (int &j: l) {
+                j = 0;
             }
-            for (int k = 0; k < numItems; ++k) {
-                content1 += input.packContent[i][k];
-                content2 += input.packContent[j][k];
-            }
-            //If the allocations of the packs are the same and there is enough space left in pack 1
-            if (used && content1+content2<=maxItems) {
-                for (int l = 0; l < numItems; ++l) {
-                    input.packContent[i][l] += input.packContent[j][l];   //Add the content of the pack to the other pack
-                    input.packContent[j][l] = 0;   //Set the content of the other pack to 0
-                }
-                for (int n = 0; n < numShops; ++n) {
-                    input.packAllocation[j][n] = 0;    //Clear the allocation of the other pack
-                }
-                for (int n = j; n < numPacks - 1; ++n) {
-                    for (int l = 0; l < numItems; ++l) {
-                        input.packContent[n][l] = input.packContent[n + 1][l];  //Move the content a layer up
-                    }
-                    for (int k = 0; k < numShops; ++k) {
-                        input.packAllocation[n][k] = input.packAllocation[n + 1][k];  //Move the allocation a layer up
-                    }
-                }
-                j--;    //Decrement j to check the pack that was moved up
-            }
-            notSame2:;
         }
+        for (auto &l: input.packAllocation) {
+            for (int &j: l) {
+                j = 0;
+            }
+        }
+
+
+        calculateDifference(m, input); //Calculate the difference between demand and supply
+
+        //Pepieno algorithm
+        //Initialize the packs
+
+        for (int p = 0; p < numItems; ++p) {
+            for (int j = 0; j < numShops; ++j) {
+                do {
+                    if (difference[p][j] <
+                        freeSpacePacks[packCounter]) {   //If the difference is smaller than the free space in the pack
+                        input.packContent[packCounter][p] = difference[p][j];   //Fill the pack with the difference
+                        freeSpacePacks[packCounter] -= difference[p][j];    //Subtract the difference from the free space
+                    } else {    //If the difference is larger than the free space in the pack
+                        input.packContent[packCounter][p] = freeSpacePacks[packCounter];    //Fill the pack
+                        freeSpacePacks[packCounter] = 0;  //Set the free space to 0
+                    }
+                    input.packAllocation[packCounter][j]++;   //Allocate the pack to the shop
+                    for (int k = 0; k < j; ++k) {    //Check if the pack can be allocated to other shops
+                        if (difference[p][k] >
+                            input.packContent[packCounter][p]) {     //If the difference is larger than the content of the pack
+                            input.packAllocation[packCounter][k]++;     //Allocate the pack to the shop
+                        }
+                    }
+                    for (int k = j + 1; k < numShops; ++k) {    //Check if the pack can be allocated to other shops
+                        if (difference[p][k] >
+                            input.packContent[packCounter][p]) {     //If the difference is larger than the content of the pack
+                            input.packAllocation[packCounter][k]++;     //Allocate the pack to the shop
+                        }
+                    }
+                    packCounter++;  //Increment the pack counter
+                    calculateDifference(m, input);  //Recalculate the difference
+                } while (difference[p][j] > 0);
+            }
+        }
+        for (int j = 0; j < numItems; ++j) {
+            input.packContent[numPacks - 1][j] = 0;
+        }
+
+        //Make a random sequence of optimise methods
+        //std::shuffle(optimiseMethods.begin(), optimiseMethods.end(), std::mt19937(std::random_device()()));
+        //print out the optimise order
+        printf("\nOptimise order: ");
+        for (int j = 0; j < 6; ++j) {
+            printf("%d ", optimiseMethods.at(j));
+        }
+        for (int j = 0; j < 6; ++j) {
+            if (optimiseMethods.at(j) == 1) {
+                input = optimiseSamePack(input);
+            }
+            if (optimiseMethods.at(j) == 2) {
+                input = optimiseSameAllocation(input);
+            }
+            if (optimiseMethods.at(j) == 3) {
+                input = optimiseMultipleof2(input);
+            }
+            if (optimiseMethods.at(j) == 4) {
+                input = optimiseMultipleof3(input);
+            }
+            if (optimiseMethods.at(j) == 5) {
+                input = optimiseMultipleof4(input);
+            }
+            if (optimiseMethods.at(j) == 6) {
+                input = optimiseSumOfPacks(input);
+            }
+
+        }
+        giveWinner(input);
+
+        calculateDifference(m, input);
+
+        if (calculateCost(input) < bestCost) {
+            bestSolution = input;
+            calculateDifference(m, bestSolution);
+            bestCost = calculateCost(bestSolution);
+            //Save the new best order
+            for (int j = 0; j < 6; ++j) {
+                bestOrder[j] = optimiseMethods.at(j);
+            }
+            printf("\nNew best solution: %f ", calculateCost(input));
+
+        }
+        std::next_permutation(optimiseMethods.begin(), optimiseMethods.end());
     }
-    calculateDifference(m, input);  //Recalculate the difference
-    bestSolution = input;
+    printf("\nBest order: ");
+    for (int j : bestOrder) {
+        printf("%d ", j);
+    }
     return 0;
 }
 
@@ -945,4 +935,273 @@ int PepienoHeuristic::calculateDifference(Model m, Input i) {
     }
     return 0;
 }
+
+Input PepienoHeuristic::optimiseSamePack(Input input) {
+    for (int i = 0; i < numPacks; i++) {
+        bool used = false;
+        for (int j = i + 1; j < numPacks; ++j) {
+            for (int k = 0; k < numItems; ++k) {
+                if (input.packContent[i][k] != input.packContent[j][k]) {//If the content of the packs is not the same
+                    goto notSame;
+                }
+                if (input.packContent[i][k] != 0) {
+                    used = true;
+                }
+            }
+            //If the contents of the packs are the same
+            if (used) {
+                for (int l = 0; l < numShops; ++l) {
+                    input.packAllocation[i][l] += input.packAllocation[j][l];   //Add the allocation of the pack to the other pack
+                    input.packAllocation[j][l] = 0;   //Set the allocation of the other pack to 0
+                }
+                for (int n = 0; n < numItems; ++n) {
+                    input.packContent[j][n] = 0;    //Clear the content of the other pack
+                }
+                for (int n = j; n < numPacks - 1; ++n) {
+                    for (int l = 0; l < numShops; ++l) {
+                        input.packAllocation[n][l] = input.packAllocation[n + 1][l];  //Move the allocation a layer up
+                    }
+                    for (int k = 0; k < numItems; ++k) {
+                        input.packContent[n][k] = input.packContent[n + 1][k];  //Move the content a layer up
+                    }
+                }
+                j--;    //Decrement j to check the pack that was moved up
+            }
+            notSame:;
+        }
+    }
+    return input;
+}
+
+Input PepienoHeuristic::optimiseSameAllocation(Input input) {
+    for (int i = 0; i < numPacks; i++) {
+        bool used = false;
+        for (int j = i + 1; j < numPacks; ++j) {
+            int content1 = 0;
+            int content2 = 0;
+
+            for (int k = 0; k < numShops; ++k) {
+                if (input.packAllocation[i][k] !=
+                    input.packAllocation[j][k]) {//If the allocation of the packs is not the same
+                    goto notSame2;
+                }
+                if (input.packAllocation[i][k] != 0) {
+                    used = true;
+                }
+            }
+            for (int k = 0; k < numItems; ++k) {
+                content1 += input.packContent[i][k];
+                content2 += input.packContent[j][k];
+            }
+            //If the allocations of the packs are the same and there is enough space left in pack 1
+            if (used && content1 + content2 <= maxItems) {
+                for (int l = 0; l < numItems; ++l) {
+                    input.packContent[i][l] += input.packContent[j][l];   //Add the content of the pack to the other pack
+                    input.packContent[j][l] = 0;   //Set the content of the other pack to 0
+                }
+                for (int n = 0; n < numShops; ++n) {
+                    input.packAllocation[j][n] = 0;    //Clear the allocation of the other pack
+                }
+                for (int n = j; n < numPacks - 1; ++n) {
+                    for (int l = 0; l < numItems; ++l) {
+                        input.packContent[n][l] = input.packContent[n + 1][l];  //Move the content a layer up
+                    }
+                    for (int k = 0; k < numShops; ++k) {
+                        input.packAllocation[n][k] = input.packAllocation[n + 1][k];  //Move the allocation a layer up
+                    }
+                }
+                j--;    //Decrement j to check the pack that was moved up
+            }
+            notSame2:;
+        }
+    }
+    return input;
+}
+
+Input PepienoHeuristic::optimiseMultipleof2(Input input) {
+    for (int i = 0; i < numPacks; i++) {
+        bool used = false;
+        for (int j = i + 1; j < numPacks; ++j) {
+            bool multiple = true;
+            for (int k = 0; k < numItems; ++k) {
+                if (input.packContent[i][k] != 2 * input.packContent[j][k]) {
+                    multiple = false;
+                    break;
+                }
+                if (input.packContent[i][k] != 0) {
+                    used = true;
+                }
+            }
+
+            if (multiple && used) {
+                int allocations = 0;
+                for (int l = 0; l < numShops; ++l) {
+                    allocations += input.packAllocation[i][l];
+                }
+                if (allocations < 15) {
+                    for (int k = 0; k < numItems; ++k) {
+                        input.packContent[i][k] = 0;
+                    }
+                    for (int k = 0; k < numShops; ++k) {
+                        input.packAllocation[j][k] += 2 * input.packAllocation[i][k];
+                        input.packAllocation[i][k] = 0;
+                    }
+                    for (int n = i; n < numPacks - 1; ++n) {
+                        for (int l = 0; l < numItems; ++l) {
+                            input.packContent[n][l] = input.packContent[n + 1][l];  //Move the content a layer up
+                        }
+                        for (int k = 0; k < numShops; ++k) {
+                            input.packAllocation[n][k] = input.packAllocation[n +
+                                                                              1][k];  //Move the allocation a layer up
+                        }
+                    }
+                    j--;    //Decrement j to check the pack that was moved up
+                }
+
+            }
+        }
+    }
+    return input;
+}
+
+Input PepienoHeuristic::optimiseMultipleof3(Input input) {
+    for (int i = 0; i < numPacks; i++) {
+        bool used = false;
+        for (int j = i + 1; j < numPacks; ++j) {
+            bool multiple = true;
+            for (int k = 0; k < numItems; ++k) {
+                if (input.packContent[i][k] != 3 * input.packContent[j][k]) {
+                    multiple = false;
+                    break;
+                }
+                if (input.packContent[i][k] != 0) {
+                    used = true;
+                }
+            }
+
+            if (multiple && used) {
+                int allocations = 0;
+                for (int l = 0; l < numShops; ++l) {
+                    allocations += input.packAllocation[i][l];
+                }
+                if (allocations < 8) {
+                    for (int k = 0; k < numItems; ++k) {
+                        input.packContent[i][k] = 0;
+                    }
+                    for (int k = 0; k < numShops; ++k) {
+                        input.packAllocation[j][k] += 3 * input.packAllocation[i][k];
+                        input.packAllocation[i][k] = 0;
+                    }
+                    for (int n = i; n < numPacks - 1; ++n) {
+                        for (int l = 0; l < numItems; ++l) {
+                            input.packContent[n][l] = input.packContent[n + 1][l];  //Move the content a layer up
+                        }
+                        for (int k = 0; k < numShops; ++k) {
+                            input.packAllocation[n][k] = input.packAllocation[n +
+                                                                              1][k];  //Move the allocation a layer up
+                        }
+                    }
+                    j--;    //Decrement j to check the pack that was moved up
+                }
+
+            }
+        }
+    }
+    return input;
+}
+
+Input PepienoHeuristic::optimiseMultipleof4(Input input) {
+    for (int i = 0; i < numPacks; i++) {
+        bool used = false;
+        for (int j = i + 1; j < numPacks; ++j) {
+            bool multiple = true;
+            for (int k = 0; k < numItems; ++k) {
+                if (input.packContent[i][k] != 4 * input.packContent[j][k]) {
+                    multiple = false;
+                    break;
+                }
+                if (input.packContent[i][k] != 0) {
+                    used = true;
+                }
+            }
+
+            if (multiple && used) {
+                int allocations = 0;
+                for (int l = 0; l < numShops; ++l) {
+                    allocations += input.packAllocation[i][l];
+                }
+                if (allocations < 5) {
+                    for (int k = 0; k < numItems; ++k) {
+                        input.packContent[i][k] = 0;
+                    }
+                    for (int k = 0; k < numShops; ++k) {
+                        input.packAllocation[j][k] += 4 * input.packAllocation[i][k];
+                        input.packAllocation[i][k] = 0;
+                    }
+                    for (int n = i; n < numPacks - 1; ++n) {
+                        for (int l = 0; l < numItems; ++l) {
+                            input.packContent[n][l] = input.packContent[n + 1][l];  //Move the content a layer up
+                        }
+                        for (int k = 0; k < numShops; ++k) {
+                            input.packAllocation[n][k] = input.packAllocation[n +
+                                                                              1][k];  //Move the allocation a layer up
+                        }
+                    }
+                    j--;    //Decrement j to check the pack that was moved up
+                }
+
+            }
+        }
+    }
+    return input;
+}
+
+Input PepienoHeuristic::optimiseSumOfPacks(Input input) {
+    for (int i = 0; i < numPacks; i++) {
+        bool used = false;
+        for (int j = i + 1; j < numPacks; ++j) {
+            for (int k = j + 1; k < numPacks; ++k) {
+                bool sum = true;
+                for (int l = 0; l < numItems; ++l) {
+                    if (input.packContent[i][l] != input.packContent[j][l] + input.packContent[k][l]) {
+                        sum = false;
+                        break;
+                    }
+                    if (input.packContent[i][l] != 0) {
+                        used = true;
+                    }
+                }
+                if (sum && used) {
+                    int allocations = 0;
+                    for (int l = 0; l < numShops; ++l) {
+                        allocations += input.packAllocation[i][l];
+                    }
+                    if (allocations < 15) {
+                        for (int l = 0; l < numItems; ++l) {
+                            input.packContent[i][l] = 0;
+                        }
+                        for (int l = 0; l < numShops; ++l) {
+                            input.packAllocation[j][l] += input.packAllocation[i][l];
+                            input.packAllocation[k][l] += input.packAllocation[i][l];
+                        }
+                        for (int l = 0; l < numShops; ++l) {
+                            input.packAllocation[i][l] = 0;
+                        }
+                        for (int n = i; n < numPacks - 1; ++n) {
+                            for (int l = 0; l < numItems; ++l) {
+                                input.packContent[n][l] = input.packContent[n + 1][l];  //Move the content a layer up
+                            }
+                            for (int o = 0; o < numShops; ++o) {
+                                input.packAllocation[n][o] = input.packAllocation[n +
+                                                                                  1][o];  //Move the allocation a layer up
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return input;
+}
+
 
